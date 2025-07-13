@@ -1,0 +1,392 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+}
+
+.container {
+    width: 100%;
+    max-width: 600px;
+    padding: 20px;
+}
+
+h1 {
+    color: white;
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.subtitle {
+    color: rgba(255,255,255,0.9);
+    text-align: center;
+    font-size: 1.1rem;
+    margin-bottom: 30px;
+}
+
+.card {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 1.1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    transition: border-color 0.3s;
+}
+
+input[type="text"]:focus {
+    outline: none;
+    border-color: #2a5298;
+}
+
+button {
+    background: #2a5298;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 1.1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    width: 100%;
+    font-weight: 600;
+}
+
+button:hover {
+    background: #1e3c72;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(30, 60, 114, 0.4);
+}
+
+.secondary-btn {
+    background: #e0e0e0;
+    color: #333;
+    margin-top: 10px;
+}
+
+.secondary-btn:hover {
+    background: #d0d0d0;
+}
+
+.hidden {
+    display: none;
+}
+
+.elimination-progress {
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 30px;
+    background: #e0e0e0;
+    border-radius: 15px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff6b6b, #f06595);
+    transition: width 0.5s ease;
+}
+
+.examples-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.example-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    margin: 5px 0;
+    background: #f5f5f5;
+    border-radius: 8px;
+}
+
+.example-words {
+    font-weight: 600;
+}
+
+.example-distance {
+    background: #2a5298;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+}
+
+.guess-input-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.guess-input-container input {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.guess-input-container button {
+    width: auto;
+    padding: 12px 30px;
+}
+
+.result-display {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.distance-meter {
+    margin-bottom: 20px;
+}
+
+.meter-label {
+    text-align: center;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.meter-bar {
+    width: 100%;
+    height: 40px;
+    background: linear-gradient(90deg, #ff6b6b 0%, #4ecdc4 100%);
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.meter-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 2px;
+    background: #333;
+    transition: left 0.5s ease;
+}
+
+.meter-values {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+    font-size: 0.9rem;
+}
+
+.meter-values span:nth-child(2) {
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.feedback-text p {
+    margin: 5px 0;
+}
+
+#feedback-message {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.guess-word {
+    color: #666;
+}
+
+.stats {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.stats p {
+    font-weight: 600;
+}
+
+.stats span {
+    color: #2a5298;
+}
+
+.hint-btn {
+    width: auto;
+    padding: 8px 20px;
+    font-size: 0.9rem;
+    background: #4ecdc4;
+}
+
+.hint-btn:hover {
+    background: #45b7b8;
+}
+
+.eliminated {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #e8f5e9;
+    border-radius: 8px;
+}
+
+.eliminated h3 {
+    margin-bottom: 10px;
+    color: #2e7d32;
+}
+
+#eliminated-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.eliminated-word {
+    background: #4caf50;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+}
+
+.history {
+    margin-top: 20px;
+}
+
+.history h3 {
+    margin-bottom: 15px;
+    color: #555;
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    margin: 5px 0;
+    background: #f8f9fa;
+    border-radius: 6px;
+    font-size: 0.95rem;
+}
+
+.history-distance {
+    font-weight: 600;
+}
+
+.distance-high {
+    color: #4ecdc4;
+}
+
+.distance-medium {
+    color: #ffa500;
+}
+
+.distance-low {
+    color: #ff6b6b;
+}
+
+.victory-card {
+    text-align: center;
+}
+
+.victory-card h2 {
+    color: #2a5298;
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+}
+
+.victory-card p {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+}
+
+#final-word {
+    color: #2a5298;
+    font-weight: bold;
+}
+
+.graph-container {
+    margin: 20px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.graph-container h3 {
+    margin-bottom: 15px;
+    text-align: center;
+    color: #555;
+}
+
+#word-graph {
+    width: 100%;
+    height: 400px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: white;
+}
+
+.node {
+    cursor: pointer;
+}
+
+.node circle {
+    stroke-width: 2px;
+}
+
+.node text {
+    font-size: 12px;
+    font-weight: 600;
+    pointer-events: none;
+}
+
+.link {
+    fill: none;
+    stroke: #999;
+    stroke-opacity: 0.3;
+    stroke-width: 1px;
+}
+
+.tooltip {
+    position: absolute;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    border-radius: 5px;
+    font-size: 12px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}

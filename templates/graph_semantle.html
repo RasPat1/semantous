@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semantle - Graph Edition</title>
+    <link rel="stylesheet" href="/static/graph_style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Setup Phase -->
+        <div id="setup-phase" class="setup-overlay">
+            <div class="setup-card">
+                <h1>🎯 Semantle - Graph Edition</h1>
+                <p>Find the secret word by semantic similarity!</p>
+                <p class="subtitle">Watch how words connect in semantic space</p>
+                
+                <input type="text" id="secret-word" placeholder="Enter secret word..." autofocus>
+                <button onclick="setWord()">Start Game</button>
+            </div>
+        </div>
+        
+        <!-- Game Phase -->
+        <div id="game-phase" class="game-container hidden">
+            <div class="header">
+                <h1>Semantle</h1>
+                <div class="controls">
+                    <input type="text" id="guess-input" placeholder="Enter your guess..." autofocus>
+                    <button onclick="makeGuess()">Guess</button>
+                    <span class="guess-count">Guesses: <span id="guess-count">0</span></span>
+                </div>
+            </div>
+            
+            <div class="main-content">
+                <!-- Graph takes most of the space -->
+                <div class="graph-section">
+                    <svg id="word-graph"></svg>
+                    <div class="graph-legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #ff0000"></div>
+                            <span>0-20 (Very different)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #ff8800"></div>
+                            <span>20-40 (Different)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #ffff00"></div>
+                            <span>40-60 (Related)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #88ff00"></div>
+                            <span>60-80 (Similar)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #00ff00"></div>
+                            <span>80-100 (Very similar)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Side panel -->
+                <div class="side-panel">
+                    <div class="current-guess">
+                        <h3>Last Guess</h3>
+                        <div class="score-display">
+                            <div class="score-value" id="current-score">--</div>
+                            <div class="score-label">Similarity</div>
+                        </div>
+                        <div class="feedback" id="feedback"></div>
+                    </div>
+                    
+                    <div class="history">
+                        <h3>All Guesses</h3>
+                        <div id="history-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Victory Modal -->
+        <div id="victory-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>🎉 Victory!</h2>
+                <p>You found "<span id="final-word"></span>" in <span id="final-guesses"></span> guesses!</p>
+                <button onclick="resetGame()">Play Again</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/graph_script.js"></script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antisemantle - Opposites Game</title>
+    <link rel="stylesheet" href="/static/antistyle.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Antisemantle</h1>
+        <p class="subtitle">Find the word that's LEAST related to your guesses!</p>
+        
+        <div id="setup-phase" class="game-phase">
+            <div class="card">
+                <h2>Set the Target Word</h2>
+                <p>Player 1: Enter a word that Player 2 must find by elimination</p>
+                <input type="text" id="secret-word" placeholder="Enter target word..." autofocus>
+                <button onclick="setWord()">Start Game</button>
+                
+                <div class="examples-section">
+                    <h3>How Antisemantle Works:</h3>
+                    <p>Unlike regular Semantle, you want to find words that are <strong>semantically distant</strong> from the target.</p>
+                    <p>Each guess helps eliminate semantic spaces where the target word <em>isn't</em>.</p>
+                    <button onclick="showExamples()" class="secondary-btn">Show Distance Examples</button>
+                    <div id="examples" class="hidden"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="game-phase" class="game-phase hidden">
+            <div class="card">
+                <h2>Eliminate Semantic Spaces</h2>
+                <p>Find words that are semantically DISTANT from the target!</p>
+                
+                <div id="distance-graph" class="graph-container">
+                    <h3>Semantic Distance Map</h3>
+                    <svg id="word-graph"></svg>
+                </div>
+                
+                <div class="elimination-progress">
+                    <div class="progress-bar">
+                        <div id="elimination-fill" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <p>Elimination Progress: <span id="elimination-percent">0%</span></p>
+                </div>
+                
+                <div class="guess-input-container">
+                    <input type="text" id="guess-input" placeholder="Enter a distant word..." autofocus>
+                    <button onclick="makeGuess()">Guess</button>
+                </div>
+                
+                <div id="current-result" class="result-display hidden">
+                    <div class="distance-meter">
+                        <div class="meter-label">Semantic Distance</div>
+                        <div class="meter-bar">
+                            <div id="distance-fill" class="meter-fill"></div>
+                        </div>
+                        <div class="meter-values">
+                            <span>Close</span>
+                            <span id="distance-value">0</span>
+                            <span>Distant</span>
+                        </div>
+                    </div>
+                    <div class="feedback-text">
+                        <p id="feedback-message"></p>
+                        <p class="guess-word">Your guess: <span id="guess-word"></span></p>
+                    </div>
+                </div>
+                
+                <div class="stats">
+                    <p>Guesses: <span id="guess-count">0</span></p>
+                    <p>Best Distance: <span id="best-distance">0</span>/100</p>
+                    <button onclick="getHint()" class="hint-btn">Get Hint</button>
+                </div>
+                
+                <div id="eliminated-spaces" class="eliminated hidden">
+                    <h3>Well-Eliminated Concepts:</h3>
+                    <div id="eliminated-list"></div>
+                </div>
+                
+                <div id="guess-history" class="history">
+                    <h3>All Guesses</h3>
+                    <div id="history-list"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="victory-phase" class="game-phase hidden">
+            <div class="card victory-card">
+                <h2>🎯 Found It!</h2>
+                <p>You discovered "<span id="final-word"></span>" - the most distant word!</p>
+                <p>Total guesses: <span id="final-guesses"></span></p>
+                <button onclick="resetGame()">Play Again</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/antiscript.js"></script>
+</body>
+</html>

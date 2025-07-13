@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semantle vs Antisemantle</title>
+    <link rel="stylesheet" href="/static/combined.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="full-container">
+        <!-- Setup Phase -->
+        <div id="setup-phase" class="setup-overlay">
+            <div class="setup-card">
+                <h1>🎯 Semantle vs Antisemantle 🔄</h1>
+                <p>Set two secret words - one to find by closeness, one by distance!</p>
+                
+                <div class="setup-inputs">
+                    <div class="input-group">
+                        <label>Semantle Word (find by similarity):</label>
+                        <input type="text" id="semantle-word" placeholder="Enter word..." autofocus>
+                    </div>
+                    <div class="input-group">
+                        <label>Antisemantle Word (find by distance):</label>
+                        <input type="text" id="antisemantle-word" placeholder="Enter word...">
+                    </div>
+                </div>
+                
+                <button onclick="setWords()" class="start-btn">Start Game</button>
+                
+                <div class="examples-section">
+                    <button onclick="showExamples()" class="example-btn">Show How Scoring Works</button>
+                    <div id="examples" class="hidden"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Game Phase -->
+        <div id="game-phase" class="game-container hidden">
+            <!-- Header -->
+            <div class="header">
+                <h1>Semantle vs Antisemantle</h1>
+                <div class="guess-input-wrapper">
+                    <input type="text" id="guess-input" placeholder="Enter your guess..." autofocus>
+                    <button onclick="makeGuess()">Guess</button>
+                    <span class="guess-counter">Guesses: <span id="guess-count">0</span></span>
+                </div>
+            </div>
+            
+            <!-- Split View -->
+            <div class="split-view">
+                <!-- Semantle Side -->
+                <div class="game-side semantle-side">
+                    <h2>🎯 Semantle</h2>
+                    <p class="side-subtitle">Find the word by SIMILARITY</p>
+                    
+                    <div class="graph-container">
+                        <svg id="semantle-graph"></svg>
+                    </div>
+                    
+                    <div class="score-display">
+                        <div class="score-value" id="semantle-score">--</div>
+                        <div class="score-label">Similarity</div>
+                        <div class="feedback" id="semantle-feedback"></div>
+                    </div>
+                    
+                    <div class="history-section">
+                        <h3>Guess History</h3>
+                        <div id="semantle-history" class="history-list"></div>
+                    </div>
+                </div>
+                
+                <!-- Antisemantle Side -->
+                <div class="game-side antisemantle-side">
+                    <h2>🔄 Antisemantle</h2>
+                    <p class="side-subtitle">Find the word by DISTANCE</p>
+                    
+                    <div class="graph-container">
+                        <svg id="antisemantle-graph"></svg>
+                    </div>
+                    
+                    <div class="score-display">
+                        <div class="score-value" id="antisemantle-score">--</div>
+                        <div class="score-label">Distance</div>
+                        <div class="feedback" id="antisemantle-feedback"></div>
+                    </div>
+                    
+                    <div class="history-section">
+                        <h3>Guess History</h3>
+                        <div id="antisemantle-history" class="history-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Victory Modal -->
+        <div id="victory-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2 id="victory-title">🎉 Victory!</h2>
+                <p id="victory-message"></p>
+                <button onclick="resetGame()">Play Again</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/combined.js"></script>
+</body>
+</html>

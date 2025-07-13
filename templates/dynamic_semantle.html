@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Semantle</title>
+    <link rel="stylesheet" href="/static/dynamic_style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Setup Phase -->
+        <div id="setup-phase" class="setup-overlay">
+            <div class="setup-card">
+                <h1>🌳 Dynamic Semantle</h1>
+                <p>Watch semantic connections form as you guess!</p>
+                <p class="subtitle">Each word connects to its most similar neighbor, creating paths to the secret word</p>
+                
+                <input type="text" id="secret-word" placeholder="Enter secret word..." autofocus>
+                <button onclick="setWord()">Start Game</button>
+            </div>
+        </div>
+        
+        <!-- Game Phase -->
+        <div id="game-phase" class="game-container hidden">
+            <div class="header">
+                <h1>Dynamic Semantle</h1>
+                <div class="controls">
+                    <input type="text" id="guess-input" placeholder="Enter your guess..." autofocus>
+                    <button onclick="makeGuess()">Guess</button>
+                    <span class="guess-count">Guesses: <span id="guess-count">0</span></span>
+                </div>
+            </div>
+            
+            <div class="main-content">
+                <!-- Graph takes most of the space -->
+                <div class="graph-section">
+                    <svg id="word-graph"></svg>
+                    <div class="graph-info">
+                        <p>Node size = similarity to secret word</p>
+                        <p>Each word connects to its most similar neighbor</p>
+                    </div>
+                </div>
+                
+                <!-- Side panel -->
+                <div class="side-panel">
+                    <div class="current-guess">
+                        <h3>Last Guess</h3>
+                        <div class="score-display">
+                            <div class="score-value" id="current-score">--</div>
+                            <div class="score-label">Similarity</div>
+                        </div>
+                        <div class="feedback" id="feedback"></div>
+                    </div>
+                    
+                    <div class="history">
+                        <h3>All Guesses</h3>
+                        <div id="history-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Victory Modal -->
+        <div id="victory-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>🎉 Victory!</h2>
+                <p>You found "<span id="final-word"></span>" in <span id="final-guesses"></span> guesses!</p>
+                <button onclick="resetGame()">Play Again</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/dynamic_script.js"></script>
+</body>
+</html>
