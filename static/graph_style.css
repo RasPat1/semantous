@@ -262,14 +262,21 @@ body {
 .history-item {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 10px 14px;
     background: rgba(255, 255, 255, 0.05);
     border-radius: 6px;
+    gap: 10px;
     font-size: 0.9rem;
 }
 
 .history-score {
     font-weight: 600;
+}
+
+.word-toggle {
+    cursor: pointer;
+    margin-right: 5px;
 }
 
 /* Graph Styles */

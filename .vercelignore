@@ -1,0 +1,10 @@
+models/
+*.bin
+*.npy
+__pycache__/
+*.pyc
+.git/
+.env
+.venv/
+venv/
+*.egg-info/

@@ -3,6 +3,7 @@ let simulation = null;
 let allNodes = [];
 let allLinks = [];
 let pairwiseSims = {};
+let latestGuess = null;
 
 async function setWord() {
     const wordInput = document.getElementById('secret-word');
@@ -32,6 +33,8 @@ async function setWord() {
             allNodes = [];
             allLinks = [];
             pairwiseSims = {};
+            hiddenWords.clear();
+            latestGuess = null;
             updateDisplay();
             initGraph();
         } else {
@@ -71,6 +74,7 @@ async function makeGuess() {
             // Update history
             guessHistory = result.all_scores;
             pairwiseSims = result.pairwise_similarities;
+            latestGuess = result.guess;
             updateDisplay();
             
             // Update graph
@@ -95,18 +99,38 @@ async function makeGuess() {
     }
 }
 
+let hiddenWords = new Set();
+
 function updateDisplay() {
     const historyList = document.getElementById('history-list');
     historyList.innerHTML = '';
     
-    guessHistory.forEach(item => {
+    // Sort by score (highest first)
+    const sortedHistory = [...guessHistory].sort((a, b) => b.score - a.score);
+    
+    sortedHistory.forEach(item => {
         const div = document.createElement('div');
         div.className = 'history-item';
         const color = getScoreColor(item.score);
+        const isHidden = hiddenWords.has(item.word);
         div.innerHTML = `
-            <span>${item.word}</span>
+            <input type="checkbox" class="word-toggle" data-word="${item.word}" ${isHidden ? '' : 'checked'}>
+            <span style="${isHidden ? 'opacity: 0.5; text-decoration: line-through;' : ''}">${item.word}</span>
             <span class="history-score" style="color: ${color}">${item.score}/100</span>
         `;
+        
+        // Add event listener to checkbox
+        const checkbox = div.querySelector('.word-toggle');
+        checkbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                hiddenWords.delete(item.word);
+            } else {
+                hiddenWords.add(item.word);
+            }
+            // Update graph to reflect changes
+            updateGraph(guessHistory, pairwiseSims);
+        });
+        
         historyList.appendChild(div);
     });
 }
@@ -148,11 +172,15 @@ function updateGraph(scores, pairwiseSimilarities) {
     const width = svg.node().getBoundingClientRect().width;
     const height = svg.node().getBoundingClientRect().height;
     
+    // Filter out hidden words
+    const visibleScores = scores.filter(item => !hiddenWords.has(item.word));
+    
     // Create nodes
-    allNodes = scores.map((item, i) => ({
+    allNodes = visibleScores.map((item, i) => ({
         id: item.word,
         score: item.score,
-        index: i
+        index: i,
+        isNew: item.word === latestGuess
     }));
     
     // Add target node
@@ -166,8 +194,8 @@ function updateGraph(scores, pairwiseSimilarities) {
     // Create links between all pairs of guessed words
     allLinks = [];
     
-    // Links from target to each guess
-    scores.forEach(item => {
+    // Links from target to each visible guess
+    visibleScores.forEach(item => {
         allLinks.push({
             source: 'TARGET',
             target: item.word,
@@ -176,15 +204,18 @@ function updateGraph(scores, pairwiseSimilarities) {
         });
     });
     
-    // Links between all pairs of guesses
+    // Links between all pairs of visible guesses
     Object.entries(pairwiseSimilarities).forEach(([pair, similarity]) => {
         const [word1, word2] = pair.split('-');
-        allLinks.push({
-            source: word1,
-            target: word2,
-            similarity: similarity,
-            isToTarget: false
-        });
+        // Only add link if both words are visible
+        if (!hiddenWords.has(word1) && !hiddenWords.has(word2)) {
+            allLinks.push({
+                source: word1,
+                target: word2,
+                similarity: similarity,
+                isToTarget: false
+            });
+        }
     });
     
     // Update force simulation
@@ -252,12 +283,18 @@ function updateGraph(scores, pairwiseSimilarities) {
         .attr('r', d => d.isTarget ? 20 : 10 + (d.score / 10))
         .style('fill', d => {
             if (d.isTarget) return '#667eea';
+            if (d.isNew) return '#ff00ff'; // Highlight new nodes in purple
             return getScoreColor(d.score);
-        });
+        })
+        .style('stroke', d => d.isNew ? '#ff00ff' : 'none')
+        .style('stroke-width', d => d.isNew ? 3 : 0)
+        .style('stroke-dasharray', d => d.isNew ? '5,5' : 'none');
     
     nodeUpdate.select('text')
-        .text(d => d.id)
-        .attr('y', d => d.isTarget ? 35 : 25);
+        .text(d => d.isTarget ? '?' : d.id)
+        .attr('y', d => d.isTarget ? 5 : 25)
+        .style('font-size', d => d.isTarget ? '24px' : '12px')
+        .style('font-weight', d => d.isTarget ? 'bold' : 'normal');
     
     // Add tooltips
     nodeUpdate.select('title').remove();
@@ -277,6 +314,19 @@ function updateGraph(scores, pairwiseSimilarities) {
     });
     
     simulation.alpha(1).restart();
+    
+    // Fade out new node highlight after 3 seconds
+    if (latestGuess) {
+        setTimeout(() => {
+            nodeUpdate.filter(d => d.isNew)
+                .select('circle')
+                .transition()
+                .duration(1000)
+                .style('stroke', 'none')
+                .style('stroke-width', 0)
+                .style('fill', d => getScoreColor(d.score));
+        }, 3000);
+    }
 }
 
 function dragstarted(event, d) {
@@ -312,6 +362,8 @@ function resetGame() {
     
     // Clear history
     guessHistory = [];
+    hiddenWords.clear();
+    latestGuess = null;
     updateDisplay();
 }
 
