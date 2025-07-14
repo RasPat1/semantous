@@ -1,21 +1,14 @@
 {
-  "version": 2,
   "builds": [
     {
-      "src": "app.py",
-      "use": "@vercel/python",
-      "config": {
-        "maxLambdaSize": "50mb"
-      }
+      "src": "dynamic_semantle_vercel.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "app.py"
+      "dest": "dynamic_semantle_vercel.py"
     }
-  ],
-  "env": {
-    "FLASK_APP": "app.py"
-  }
+  ]
 }

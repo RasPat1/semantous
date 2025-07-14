@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Semantle - Standalone</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #1a1a1a;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: #a855f7;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #999;
+            margin-top: 0.25rem;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: #1a1a1a;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .controls {
+            padding: 1.5rem;
+            border-bottom: 1px solid #333;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.75rem;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #e0e0e0;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #a855f7;
+            box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            background: #a855f7;
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        button:hover {
+            background: #9333ea;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #4a4a4a;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .small-button {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            background: #374151;
+        }
+
+        .small-button:hover {
+            background: #4b5563;
+        }
+
+        .info-box {
+            background: #2a2a2a;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .guess-count {
+            text-align: center;
+            color: #999;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .history h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: #a855f7;
+        }
+
+        .guess-item {
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: #2a2a2a;
+            border-radius: 0.375rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .guess-item.new {
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .guess-word {
+            font-weight: 500;
+        }
+
+        .guess-score {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .graph-container {
+            flex: 1;
+            position: relative;
+            background: #0f0f0f;
+        }
+
+        #graph {
+            width: 100%;
+            height: 100%;
+        }
+
+        .node {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .node:hover {
+            filter: brightness(1.2);
+        }
+
+        .node-label {
+            font-size: 14px;
+            font-weight: 500;
+            pointer-events: none;
+            user-select: none;
+            fill: white;
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+
+        .link {
+            fill: none;
+            pointer-events: none;
+        }
+
+        .success-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1a1a1a;
+            padding: 3rem;
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            text-align: center;
+            z-index: 1000;
+            border: 2px solid #a855f7;
+        }
+
+        .success-message h2 {
+            color: #a855f7;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .success-message .word {
+            font-size: 2rem;
+            color: #10b981;
+            margin-bottom: 1rem;
+        }
+
+        .success-message .stats {
+            font-size: 1.2rem;
+            color: #999;
+            margin-bottom: 1.5rem;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: #1a1a1a;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.9rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            border: 1px solid #333;
+            z-index: 1000;
+        }
+
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(26, 26, 26, 0.9);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #333;
+            font-size: 0.85rem;
+        }
+
+        .legend h4 {
+            color: #a855f7;
+            margin-bottom: 0.5rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .notice {
+            background: #374151;
+            color: #fbbf24;
+            padding: 0.75rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                max-height: 40vh;
+                border-right: none;
+                border-bottom: 1px solid #333;
+            }
+            
+            .header {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="notice">
+        This is a demonstration version using simulated word similarities. No backend required!
+    </div>
+    
+    <div class="header">
+        <div>
+            <h1>Dynamic Semantle</h1>
+            <div class="subtitle">Watch semantic connections reorganize as you play</div>
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="controls">
+                <div id="setup-phase">
+                    <div class="info-box">
+                        Choose a secret word and watch as players' guesses create a self-organizing semantic network!
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="secret-word" placeholder="Enter secret word" autofocus>
+                        <button id="set-word-btn" onclick="setWord()">Start Game</button>
+                    </div>
+                </div>
+                
+                <div id="game-phase" style="display: none;">
+                    <div class="input-group">
+                        <input type="text" id="guess-input" placeholder="Enter your guess">
+                        <button id="guess-btn" onclick="makeGuess()">Guess</button>
+                    </div>
+                    <div class="guess-count">Guesses: <span id="guess-count">0</span></div>
+                    <button class="small-button" onclick="autoPlay()" style="width: 100%; margin-top: 1rem;">Auto Play Demo</button>
+                </div>
+            </div>
+            
+            <div class="history">
+                <h3>Guess History (Sorted by Score)</h3>
+                <div id="guess-history"></div>
+            </div>
+        </div>
+        
+        <div class="graph-container">
+            <svg id="graph"></svg>
+            <div class="legend">
+                <h4>Similarity Score</h4>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #10b981;"></div>
+                    <span>80-100 (Very Hot)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #84cc16;"></div>
+                    <span>60-80 (Hot)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #eab308;"></div>
+                    <span>40-60 (Warm)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f97316;"></div>
+                    <span>20-40 (Cool)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ef4444;"></div>
+                    <span>0-20 (Cold)</span>
+                </div>
+            </div>
+            <div class="tooltip" id="tooltip"></div>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let secretWord = '';
+        let guesses = [];
+        let guessCount = 0;
+        let graphData = { nodes: [], links: [] };
+        let simulation = null;
+        let svg = null;
+        let g = null;
+
+        // Simulated word embeddings for demo
+        const wordVectors = {
+            // Water-related
+            'ocean': [0.9, 0.8, 0.1, 0.2, 0.7],
+            'sea': [0.85, 0.75, 0.15, 0.25, 0.65],
+            'water': [0.8, 0.7, 0.2, 0.3, 0.6],
+            'wave': [0.75, 0.65, 0.25, 0.35, 0.55],
+            'beach': [0.7, 0.6, 0.3, 0.4, 0.5],
+            'sand': [0.65, 0.55, 0.35, 0.45, 0.45],
+            'shore': [0.72, 0.62, 0.28, 0.38, 0.52],
+            'tide': [0.78, 0.68, 0.22, 0.32, 0.58],
+            'fish': [0.6, 0.5, 0.4, 0.5, 0.4],
+            'whale': [0.82, 0.72, 0.18, 0.28, 0.62],
+            'dolphin': [0.79, 0.69, 0.21, 0.31, 0.59],
+            'coral': [0.68, 0.58, 0.32, 0.42, 0.48],
+            'blue': [0.5, 0.4, 0.5, 0.6, 0.3],
+            'deep': [0.7, 0.6, 0.3, 0.4, 0.8],
+            
+            // Animals
+            'cat': [0.1, 0.2, 0.9, 0.8, 0.1],
+            'dog': [0.15, 0.25, 0.85, 0.75, 0.15],
+            'kitten': [0.08, 0.18, 0.92, 0.82, 0.08],
+            'puppy': [0.13, 0.23, 0.87, 0.77, 0.13],
+            'pet': [0.2, 0.3, 0.8, 0.7, 0.2],
+            'animal': [0.3, 0.4, 0.7, 0.6, 0.3],
+            'fur': [0.25, 0.35, 0.75, 0.65, 0.25],
+            'paw': [0.18, 0.28, 0.82, 0.72, 0.18],
+            
+            // Technology
+            'computer': [0.1, 0.9, 0.1, 0.8, 0.2],
+            'laptop': [0.08, 0.92, 0.08, 0.82, 0.18],
+            'phone': [0.12, 0.88, 0.12, 0.78, 0.22],
+            'screen': [0.15, 0.85, 0.15, 0.75, 0.25],
+            'keyboard': [0.09, 0.91, 0.09, 0.81, 0.19],
+            'mouse': [0.11, 0.89, 0.11, 0.79, 0.21],
+            'code': [0.05, 0.95, 0.05, 0.85, 0.15],
+            'software': [0.07, 0.93, 0.07, 0.83, 0.17],
+            
+            // Food
+            'apple': [0.8, 0.1, 0.2, 0.1, 0.9],
+            'orange': [0.75, 0.15, 0.25, 0.15, 0.85],
+            'fruit': [0.7, 0.2, 0.3, 0.2, 0.8],
+            'banana': [0.78, 0.12, 0.22, 0.12, 0.88],
+            'food': [0.6, 0.3, 0.4, 0.3, 0.7],
+            'eat': [0.65, 0.25, 0.35, 0.25, 0.75],
+            'sweet': [0.72, 0.18, 0.28, 0.18, 0.82],
+            
+            // Colors
+            'red': [0.5, 0.5, 0.5, 0.9, 0.1],
+            'green': [0.4, 0.6, 0.4, 0.8, 0.2],
+            'yellow': [0.45, 0.55, 0.45, 0.85, 0.15],
+            'purple': [0.55, 0.45, 0.55, 0.95, 0.05],
+            'color': [0.5, 0.5, 0.5, 0.87, 0.13]
+        };
+
+        // Calculate cosine similarity between two words
+        function calculateSimilarity(word1, word2) {
+            if (word1 === word2) return 100;
+            
+            const vec1 = wordVectors[word1.toLowerCase()];
+            const vec2 = wordVectors[word2.toLowerCase()];
+            
+            if (!vec1 || !vec2) {
+                // Random similarity for unknown words
+                return Math.random() * 30 + 10;
+            }
+            
+            // Cosine similarity
+            let dotProduct = 0;
+            let norm1 = 0;
+            let norm2 = 0;
+            
+            for (let i = 0; i < vec1.length; i++) {
+                dotProduct += vec1[i] * vec2[i];
+                norm1 += vec1[i] * vec1[i];
+                norm2 += vec2[i] * vec2[i];
+            }
+            
+            const cosineSim = dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2));
+            return Math.max(0, Math.min(100, cosineSim * 100));
+        }
+
+        // Color scale for similarity scores
+        function getColor(score) {
+            const hue = (score / 100) * 120;
+            const saturation = 70;
+            const lightness = 50;
+            return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+        }
+
+        // Get node radius based on score
+        function getNodeRadius(score, isTarget = false) {
+            if (isTarget) return 25;
+            return 8 + (score / 100) * 12;
+        }
+
+        // Initialize the graph
+        function initializeGraph() {
+            const container = document.querySelector('.graph-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            svg = d3.select('#graph')
+                .attr('width', width)
+                .attr('height', height);
+
+            // Add zoom behavior
+            const zoom = d3.zoom()
+                .scaleExtent([0.1, 4])
+                .on('zoom', (event) => {
+                    g.attr('transform', event.transform);
+                });
+
+            svg.call(zoom);
+
+            // Create main group
+            g = svg.append('g');
+
+
+            // Initialize force simulation
+            simulation = d3.forceSimulation()
+                .force('link', d3.forceLink().id(d => d.id).distance(d => (100 - d.value) * 2))
+                .force('charge', d3.forceManyBody().strength(-300))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(d => getNodeRadius(d.score) + 10));
+        }
+
+        // Calculate graph data with hub-and-spoke topology
+        function calculateGraphData() {
+            const nodes = [];
+            const links = [];
+            
+            // Add secret node
+            nodes.push({
+                id: secretWord,
+                label: '?',
+                score: 100,
+                isTarget: true
+            });
+            
+            // Add guess nodes
+            guesses.forEach(guess => {
+                nodes.push({
+                    id: guess.word,
+                    label: guess.word,
+                    score: guess.score,
+                    isTarget: false,
+                    isNew: guess.isNew
+                });
+            });
+            
+            // Create hub-and-spoke connections
+            nodes.forEach(node => {
+                if (node.isTarget) return;
+                
+                let bestTarget = null;
+                let bestSimilarity = -1;
+                
+                // Find most similar node
+                nodes.forEach(otherNode => {
+                    if (node.id === otherNode.id) return;
+                    
+                    const similarity = calculateSimilarity(node.id, otherNode.id);
+                    if (similarity > bestSimilarity) {
+                        bestSimilarity = similarity;
+                        bestTarget = otherNode.id;
+                    }
+                });
+                
+                if (bestTarget) {
+                    links.push({
+                        source: node.id,
+                        target: bestTarget,
+                        value: bestSimilarity
+                    });
+                }
+            });
+            
+            return { nodes, links };
+        }
+
+        // Update the graph
+        function updateGraph() {
+            graphData = calculateGraphData();
+
+            // Clear existing elements
+            g.selectAll('.link').remove();
+            g.selectAll('.node-group').remove();
+
+            // Create links
+            const link = g.selectAll('.link')
+                .data(graphData.links)
+                .enter().append('line')
+                .attr('class', 'link')
+                .attr('stroke', d => getColor(d.value))
+                .attr('stroke-width', d => Math.pow(d.value / 100, 2) * 4 + 1)
+                .attr('stroke-opacity', d => 0.6 + (d.value / 100) * 0.2);
+
+            // Create node groups
+            const nodeGroup = g.selectAll('.node-group')
+                .data(graphData.nodes)
+                .enter().append('g')
+                .attr('class', 'node-group');
+
+            // Add circles
+            const node = nodeGroup.append('circle')
+                .attr('class', 'node')
+                .attr('r', d => getNodeRadius(d.score, d.isTarget))
+                .attr('fill', d => d.isTarget ? '#a855f7' : getColor(d.score))
+                .attr('stroke', d => d.isTarget ? '#a855f7' : getColor(d.score))
+                .attr('stroke-width', d => d.isNew ? 3 : 1.5)
+                .attr('stroke-opacity', d => d.isNew ? 1 : 0.8);
+
+            // Add labels
+            nodeGroup.append('text')
+                .attr('class', 'node-label')
+                .text(d => d.label);
+
+            // Add drag behavior
+            nodeGroup.call(d3.drag()
+                .on('start', dragStarted)
+                .on('drag', dragged)
+                .on('end', dragEnded));
+
+            // Add hover effects
+            nodeGroup
+                .on('mouseenter', function(event, d) {
+                    d3.select(this).select('circle')
+                        .attr('stroke-width', 3);
+
+                    const tooltip = document.getElementById('tooltip');
+                    tooltip.style.opacity = 1;
+                    tooltip.style.left = `${event.pageX + 10}px`;
+                    tooltip.style.top = `${event.pageY - 10}px`;
+                    tooltip.innerHTML = `
+                        <strong>${d.label}</strong><br>
+                        Similarity: ${d.score.toFixed(1)}%
+                    `;
+                })
+                .on('mouseleave', function(event, d) {
+                    d3.select(this).select('circle')
+                        .attr('stroke-width', d.isNew ? 3 : 1.5);
+
+                    document.getElementById('tooltip').style.opacity = 0;
+                });
+
+            // Update simulation
+            simulation.nodes(graphData.nodes);
+            simulation.force('link').links(graphData.links);
+            simulation.alpha(0.6).restart();
+
+            // Update positions on tick
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+
+                nodeGroup
+                    .attr('transform', d => `translate(${d.x},${d.y})`);
+            });
+
+            // Remove new highlight after animation
+            setTimeout(() => {
+                node.attr('stroke-width', 1.5);
+                guesses.forEach(g => g.isNew = false);
+            }, 3000);
+        }
+
+        // Drag functions
+        function dragStarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragEnded(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        // Set secret word
+        function setWord() {
+            const input = document.getElementById('secret-word');
+            secretWord = input.value.trim().toLowerCase();
+            
+            if (!secretWord) {
+                alert('Please enter a word');
+                return;
+            }
+
+            // Reset game
+            guesses = [];
+            guessCount = 0;
+            
+            // Switch to game phase
+            document.getElementById('setup-phase').style.display = 'none';
+            document.getElementById('game-phase').style.display = 'block';
+            document.getElementById('guess-input').focus();
+            document.getElementById('guess-count').textContent = '0';
+            document.getElementById('guess-history').innerHTML = '';
+            
+            // Initialize graph
+            updateGraph();
+        }
+
+        // Make a guess
+        function makeGuess() {
+            const input = document.getElementById('guess-input');
+            const guess = input.value.trim().toLowerCase();
+            
+            if (!guess) return;
+            
+            // Check if already guessed
+            if (guesses.some(g => g.word === guess)) {
+                alert('Already guessed!');
+                return;
+            }
+            
+            // Calculate similarity
+            const score = calculateSimilarity(guess, secretWord);
+            
+            // Add to guesses
+            guesses.push({
+                word: guess,
+                score: score,
+                isNew: true
+            });
+            
+            guessCount++;
+            
+            // Clear input
+            input.value = '';
+            
+            // Update UI
+            document.getElementById('guess-count').textContent = guessCount;
+            updateHistory();
+            updateGraph();
+            
+            // Check if won
+            if (guess === secretWord) {
+                setTimeout(() => showSuccess(), 500);
+            }
+        }
+
+        // Update guess history
+        function updateHistory() {
+            const history = document.getElementById('guess-history');
+            history.innerHTML = '';
+            
+            // Sort by score
+            const sortedGuesses = [...guesses].sort((a, b) => b.score - a.score);
+            
+            sortedGuesses.forEach(guess => {
+                const item = document.createElement('div');
+                item.className = 'guess-item';
+                if (guess.isNew) {
+                    item.className += ' new';
+                }
+                
+                item.innerHTML = `
+                    <span class="guess-word">${guess.word}</span>
+                    <span class="guess-score" style="color: ${getColor(guess.score)}">${guess.score.toFixed(1)}%</span>
+                `;
+                
+                history.appendChild(item);
+            });
+        }
+
+        // Show success message
+        function showSuccess() {
+            const successHtml = `
+                <div class="success-message">
+                    <h2>🎉 Congratulations!</h2>
+                    <div class="word">${secretWord}</div>
+                    <div class="stats">Found in ${guessCount} ${guessCount === 1 ? 'guess' : 'guesses'}</div>
+                    <button onclick="location.reload()">Play Again</button>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', successHtml);
+        }
+
+        // Auto play demo
+        async function autoPlay() {
+            const demoWords = ['water', 'sea', 'fish', 'blue', 'deep', 'whale', 'sand', 'wave'];
+            
+            for (const word of demoWords) {
+                if (guesses.some(g => g.word === word)) continue;
+                
+                document.getElementById('guess-input').value = word;
+                makeGuess();
+                await new Promise(resolve => setTimeout(resolve, 1500));
+            }
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeGraph();
+            
+            // Handle enter key
+            document.getElementById('secret-word').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') setWord();
+            });
+            
+            document.getElementById('guess-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') makeGuess();
+            });
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                const container = document.querySelector('.graph-container');
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+                
+                svg.attr('width', width).attr('height', height);
+                simulation.force('center', d3.forceCenter(width / 2, height / 2));
+                simulation.alpha(0.3).restart();
+            });
+        });
+    </script>
+</body>
+</html>

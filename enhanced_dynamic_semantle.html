@@ -1,0 +1,1762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Semantle - Enhanced D3 Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: #1a1a1a;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            color: #a855f7;
+            font-weight: 600;
+            margin: 0;
+            letter-spacing: -0.02em;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .model-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .model-selector select {
+            background: #2a2a2a;
+            color: #e0e0e0;
+            border: 1px solid #444;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .visualization-mode {
+            display: flex;
+            gap: 0.25rem;
+            background: #2a2a2a;
+            padding: 0.25rem;
+            border-radius: 0.375rem;
+        }
+
+        .mode-btn {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            color: #999;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .mode-btn.active {
+            background: #a855f7;
+            color: white;
+        }
+
+        .mode-btn:hover:not(.active) {
+            background: #3a3a3a;
+            color: #e0e0e0;
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background: #1a1a1a;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            transition: transform 0.3s;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-280px);
+        }
+
+        .sidebar-toggle {
+            position: absolute;
+            right: -20px;
+            top: 20px;
+            width: 20px;
+            height: 40px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-left: none;
+            border-radius: 0 0.25rem 0.25rem 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+        }
+
+        .controls {
+            padding: 1.5rem;
+            border-bottom: 1px solid #333;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.75rem;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #e0e0e0;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #a855f7;
+            box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            background: #a855f7;
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        button:hover:not(:disabled) {
+            background: #9333ea;
+            transform: translateY(-1px);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #4a4a4a;
+            cursor: not-allowed;
+        }
+
+        .secondary-button {
+            background: #374151;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        .secondary-button:hover:not(:disabled) {
+            background: #4b5563;
+        }
+
+        .status {
+            text-align: center;
+            padding: 0.5rem;
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        /* History Panel */
+        .history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .history h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #a855f7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            letter-spacing: -0.01em;
+        }
+
+        .history-sort {
+            font-size: 0.8rem;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .history-sort:hover {
+            color: #999;
+        }
+
+        .guess-item {
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: #2a2a2a;
+            border-radius: 0.375rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .guess-item:hover {
+            background: #3a3a3a;
+            transform: translateX(5px);
+        }
+
+        .guess-item.new {
+            animation: slideIn 0.5s ease-out;
+            border: 1px solid #a855f7;
+        }
+
+        .guess-item.highlighted {
+            background: #3a3a3a;
+            border: 1px solid #a855f7;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .guess-word {
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+            letter-spacing: 0.01em;
+        }
+
+        .guess-score {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 1.1rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Graph Container */
+        .graph-container {
+            flex: 1;
+            position: relative;
+            background: #0f0f0f;
+            overflow: hidden;
+        }
+
+        #graph {
+            width: 100%;
+            height: 100%;
+        }
+
+        .heatmap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            opacity: 0.3;
+        }
+
+        /* Graph Styles */
+        .node {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .node:hover {
+            filter: brightness(1.2);
+        }
+
+        .node-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 400;
+            pointer-events: none;
+            user-select: none;
+            fill: #e0e0e0;
+            text-anchor: start;
+            dominant-baseline: central;
+            letter-spacing: 0.02em;
+        }
+
+        .node-label.target-label {
+            text-anchor: middle;
+            font-size: 18px;
+            font-weight: 600;
+            fill: white;
+        }
+
+        .node-sublabel {
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            font-weight: 300;
+            fill: #999;
+            text-anchor: start;
+            dominant-baseline: hanging;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .link {
+            fill: none;
+            pointer-events: none;
+        }
+
+        .trail {
+            fill: none;
+            pointer-events: none;
+        }
+
+        .halo {
+            pointer-events: none;
+            mix-blend-mode: screen;
+        }
+
+        .preview-node {
+            pointer-events: none;
+        }
+
+        .preview-link {
+            stroke-dasharray: 5,5;
+            animation: dash 20s linear infinite;
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -1000;
+            }
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: #1a1a1a;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.9rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            border: 1px solid #333;
+            z-index: 1000;
+            max-width: 200px;
+        }
+
+        .tooltip-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: #a855f7;
+        }
+
+        .tooltip-score {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .tooltip-path {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 0.5rem;
+        }
+
+        /* Legend */
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(26, 26, 26, 0.9);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #333;
+            font-size: 0.85rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .legend h4 {
+            font-family: 'Playfair Display', serif;
+            color: #a855f7;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        /* Controls Overlay */
+        .controls-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(26, 26, 26, 0.9);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #333;
+            font-size: 0.85rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .controls-overlay h4 {
+            font-family: 'Playfair Display', serif;
+            color: #a855f7;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .control-item {
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .control-key {
+            background: #2a2a2a;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+
+        /* Success Modal */
+        .success-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+
+        .success-content {
+            background: #1a1a1a;
+            padding: 3rem;
+            border-radius: 1rem;
+            text-align: center;
+            border: 2px solid #a855f7;
+            animation: scaleIn 0.3s ease-out;
+            box-shadow: 0 20px 60px rgba(168, 85, 247, 0.3);
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .success-content h2 {
+            font-family: 'Playfair Display', serif;
+            color: #a855f7;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .success-word {
+            font-family: 'Inter', sans-serif;
+            font-size: 2rem;
+            color: #10b981;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .success-stats {
+            font-size: 1.2rem;
+            color: #999;
+            margin-bottom: 2rem;
+        }
+
+        /* Performance Monitor */
+        .performance-monitor {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(26, 26, 26, 0.9);
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            border: 1px solid #333;
+            font-size: 0.75rem;
+            font-family: monospace;
+            color: #666;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .performance-monitor:hover {
+            opacity: 1;
+        }
+
+        /* Loading State */
+        .loading {
+            display: inline-block;
+            margin-left: 0.5rem;
+            color: #a855f7;
+        }
+
+        .loading::after {
+            content: "...";
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: ""; }
+            40% { content: "."; }
+            60% { content: ".."; }
+            80%, 100% { content: "..."; }
+        }
+
+        /* Error Message */
+        .error {
+            background: #991b1b;
+            color: #fecaca;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                max-height: 40vh;
+                border-right: none;
+                border-bottom: 1px solid #333;
+            }
+            
+            .sidebar-toggle {
+                display: none;
+            }
+            
+            .controls-overlay,
+            .legend {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Dynamic Semantle</h1>
+        <div class="header-controls">
+            <div class="visualization-mode">
+                <button class="mode-btn active" data-mode="force">Force</button>
+                <button class="mode-btn" data-mode="radial">Radial</button>
+                <button class="mode-btn" data-mode="cluster">Cluster</button>
+            </div>
+            <div class="model-selector">
+                <label for="model-select">Model:</label>
+                <select id="model-select">
+                    <option value="sentence-bert">Sentence-BERT</option>
+                    <option value="conceptnet">ConceptNet</option>
+                    <option value="word2vec">Word2Vec</option>
+                    <option value="glove">GloVe</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-toggle" onclick="game.toggleSidebar()">‹</div>
+            <div class="controls">
+                <div id="setup-phase">
+                    <div class="input-group">
+                        <input type="text" id="secret-word" placeholder="Enter secret word" autofocus>
+                        <button onclick="game.setWord()">Set Word</button>
+                    </div>
+                </div>
+                
+                <div id="game-phase" style="display: none;">
+                    <div class="input-group">
+                        <input type="text" id="guess-input" placeholder="Enter your guess" autofocus>
+                        <button onclick="game.makeGuess()">Guess</button>
+                    </div>
+                    <button class="secondary-button" onclick="game.getHint()">Get Hint</button>
+                    <button class="secondary-button" onclick="game.toggleAutoPlay()">
+                        <span id="autoplay-text">Auto Play</span>
+                    </button>
+                    <div class="status">
+                        Guesses: <span id="guess-count">0</span>
+                        <span id="loading" class="loading" style="display: none;"></span>
+                    </div>
+                    <div id="error-container"></div>
+                </div>
+            </div>
+            
+            <div class="history">
+                <h3>
+                    Guess History
+                    <span class="history-sort" onclick="game.toggleHistorySort()">
+                        Sort: <span id="sort-mode">Score</span>
+                    </span>
+                </h3>
+                <div id="guess-history"></div>
+            </div>
+        </div>
+        
+        <div class="graph-container">
+            <canvas class="heatmap" id="heatmap"></canvas>
+            <svg id="graph"></svg>
+            
+            <div class="controls-overlay">
+                <h4>Controls</h4>
+                <div class="control-item">
+                    <span class="control-key">Drag</span> Move nodes
+                </div>
+                <div class="control-item">
+                    <span class="control-key">Scroll</span> Zoom
+                </div>
+                <div class="control-item">
+                    <span class="control-key">Click</span> Focus node
+                </div>
+                <div class="control-item">
+                    <span class="control-key">Space</span> Pause physics
+                </div>
+            </div>
+            
+            <div class="legend">
+                <h4>Similarity Score</h4>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #10b981;"></div>
+                    <span>80-100 (Very Hot)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #84cc16;"></div>
+                    <span>60-80 (Hot)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #eab308;"></div>
+                    <span>40-60 (Warm)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f97316;"></div>
+                    <span>20-40 (Cool)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ef4444;"></div>
+                    <span>0-20 (Cold)</span>
+                </div>
+            </div>
+            
+            <div class="performance-monitor" id="performance-monitor">
+                FPS: <span id="fps">0</span> | 
+                Nodes: <span id="node-count">0</span> | 
+                Mode: <span id="render-mode">SVG</span>
+            </div>
+            
+            <div class="tooltip" id="tooltip"></div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced Game Implementation
+        const game = {
+            // State
+            currentModel: 'sentence-bert',
+            visualizationMode: 'force',
+            guessHistory: [],
+            graphData: { nodes: [], links: [] },
+            simulation: null,
+            svg: null,
+            g: null,
+            heatmapCtx: null,
+            
+            // Performance
+            fps: 0,
+            frameCount: 0,
+            lastTime: performance.now(),
+            renderMode: 'SVG',
+            
+            // Settings
+            settings: {
+                enableHeatmap: true,
+                enableTrails: true,
+                enableHalos: true,
+                enablePreview: true,
+                historySort: 'score', // 'score' or 'time'
+                autoPlaySpeed: 1500,
+                physics: {
+                    alphaDecay: 0.02,
+                    velocityDecay: 0.4,
+                    linkDistance: (d) => 50 + (100 - d.value) * 2.5,
+                    linkStrength: (d) => 0.1 + (d.value / 100) * 0.9,
+                    chargeStrength: (d) => d.isTarget ? -500 : -200 - (d.score * 2),
+                    collisionPadding: (d) => d.isTarget ? 15 : 5 + (d.score / 100) * 10
+                }
+            },
+            
+            // Initialize
+            init() {
+                this.initializeGraph();
+                this.initializeHeatmap();
+                this.setupEventListeners();
+                this.startPerformanceMonitor();
+            },
+            
+            // Initialize D3 graph with enhanced features
+            initializeGraph() {
+                const container = document.querySelector('.graph-container');
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+
+                this.svg = d3.select('#graph')
+                    .attr('width', width)
+                    .attr('height', height);
+
+                // Create gradient definitions
+                const defs = this.svg.append('defs');
+                this.createGradients(defs);
+
+                // Create layers for proper z-ordering
+                this.g = this.svg.append('g').attr('class', 'main-group');
+                this.trailsGroup = this.g.append('g').attr('class', 'trails-group');
+                this.halosGroup = this.g.append('g').attr('class', 'halos-group');
+                this.linksGroup = this.g.append('g').attr('class', 'links-group');
+                this.nodesGroup = this.g.append('g').attr('class', 'nodes-group');
+                this.labelsGroup = this.g.append('g').attr('class', 'labels-group');
+
+                // Set up zoom with semantic features
+                const zoom = d3.zoom()
+                    .scaleExtent([0.1, 10])
+                    .on('zoom', (event) => this.handleZoom(event));
+
+                this.svg.call(zoom);
+
+                // Initialize enhanced force simulation
+                this.initializeSimulation(width, height);
+            },
+            
+            // Create gradient definitions for halos
+            createGradients(defs) {
+                const ranges = [
+                    { id: 'hot', color: '#10b981', min: 80 },
+                    { id: 'warm', color: '#eab308', min: 40 },
+                    { id: 'cold', color: '#ef4444', min: 0 }
+                ];
+                
+                ranges.forEach(range => {
+                    const gradient = defs.append('radialGradient')
+                        .attr('id', `halo-${range.id}`);
+                    
+                    gradient.append('stop')
+                        .attr('offset', '0%')
+                        .attr('stop-color', range.color)
+                        .attr('stop-opacity', 0.3);
+                    
+                    gradient.append('stop')
+                        .attr('offset', '50%')
+                        .attr('stop-color', range.color)
+                        .attr('stop-opacity', 0.1);
+                    
+                    gradient.append('stop')
+                        .attr('offset', '100%')
+                        .attr('stop-color', range.color)
+                        .attr('stop-opacity', 0);
+                });
+            },
+            
+            // Initialize force simulation with custom forces
+            initializeSimulation(width, height) {
+                this.simulation = d3.forceSimulation()
+                    .force('link', d3.forceLink()
+                        .id(d => d.id)
+                        .distance(this.settings.physics.linkDistance)
+                        .strength(this.settings.physics.linkStrength))
+                    .force('charge', d3.forceManyBody()
+                        .strength(this.settings.physics.chargeStrength)
+                        .distanceMax(300))
+                    .force('collision', d3.forceCollide()
+                        .radius(d => this.getNodeRadius(d.score, d.isTarget) + this.settings.physics.collisionPadding(d))
+                        .strength(0.7))
+                    .force('center', d3.forceCenter(width / 2, height / 2).strength(0.05))
+                    .alphaDecay(this.settings.physics.alphaDecay)
+                    .velocityDecay(this.settings.physics.velocityDecay);
+                
+                // Custom cluster force
+                this.simulation.force('cluster', this.createClusterForce());
+            },
+            
+            // Create custom cluster force
+            createClusterForce() {
+                let nodes;
+                
+                function force(alpha) {
+                    const clusters = d3.group(nodes, d => Math.floor(d.score / 20));
+                    
+                    clusters.forEach((clusterNodes, clusterId) => {
+                        const center = {
+                            x: d3.mean(clusterNodes, d => d.x),
+                            y: d3.mean(clusterNodes, d => d.y)
+                        };
+                        
+                        clusterNodes.forEach(node => {
+                            const dx = center.x - node.x;
+                            const dy = center.y - node.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            
+                            if (distance > 0) {
+                                const strength = 0.1 * alpha;
+                                node.vx += dx / distance * strength;
+                                node.vy += dy / distance * strength;
+                            }
+                        });
+                    });
+                }
+                
+                force.initialize = function(_) {
+                    nodes = _;
+                };
+                
+                return force;
+            },
+            
+            // Initialize heatmap canvas
+            initializeHeatmap() {
+                const container = document.querySelector('.graph-container');
+                const canvas = document.getElementById('heatmap');
+                canvas.width = container.clientWidth;
+                canvas.height = container.clientHeight;
+                this.heatmapCtx = canvas.getContext('2d');
+            },
+            
+            // Handle semantic zoom
+            handleZoom(event) {
+                const { transform } = event;
+                this.g.attr('transform', transform);
+                
+                // Semantic zoom features
+                const zoomLevel = transform.k;
+                
+                // Show/hide sublabels based on zoom
+                this.labelsGroup.selectAll('.node-sublabel')
+                    .style('opacity', zoomLevel > 2 ? Math.min(1, (zoomLevel - 2) / 2) : 0);
+                
+                // Adjust node visibility for performance
+                if (zoomLevel < 0.3) {
+                    // Hide small nodes at far zoom
+                    this.nodesGroup.selectAll('.node')
+                        .style('display', d => d.score > 50 || d.isTarget ? null : 'none');
+                } else {
+                    this.nodesGroup.selectAll('.node')
+                        .style('display', null);
+                }
+                
+                // Update heatmap if enabled
+                if (this.settings.enableHeatmap) {
+                    this.updateHeatmap();
+                }
+            },
+            
+            // Color scale
+            getColor(score) {
+                const hue = (score / 100) * 120;
+                return `hsl(${hue}, 70%, 50%)`;
+            },
+            
+            // Node radius
+            getNodeRadius(score, isTarget = false) {
+                if (isTarget) return 25;
+                const baseRadius = 8 + (score / 100) * 12;
+                // Add slight variation for visual interest
+                return baseRadius + Math.sin(score * 0.1) * 2;
+            },
+            
+            // Get halo gradient ID
+            getHaloGradient(score) {
+                if (score >= 80) return 'url(#halo-hot)';
+                if (score >= 40) return 'url(#halo-warm)';
+                return 'url(#halo-cold)';
+            },
+            
+            // Update graph with enhanced features
+            updateGraph(data) {
+                this.graphData = data;
+                
+                // Update node count
+                document.getElementById('node-count').textContent = data.nodes.length;
+                
+                // Determine render mode based on node count
+                if (data.nodes.length > 100) {
+                    this.renderMode = 'Canvas';
+                    // Switch to canvas rendering for performance
+                } else {
+                    this.renderMode = 'SVG';
+                }
+                document.getElementById('render-mode').textContent = this.renderMode;
+                
+                // Update visualization based on mode
+                switch (this.visualizationMode) {
+                    case 'radial':
+                        this.updateRadialLayout();
+                        break;
+                    case 'cluster':
+                        this.updateClusterLayout();
+                        break;
+                    default:
+                        this.updateForceLayout();
+                }
+            },
+            
+            // Update force-directed layout
+            updateForceLayout() {
+                // Update halos
+                if (this.settings.enableHalos) {
+                    this.updateHalos();
+                }
+                
+                // Update links
+                const links = this.linksGroup.selectAll('.link')
+                    .data(this.graphData.links, d => `${d.source.id || d.source}-${d.target.id || d.target}`);
+                
+                links.exit()
+                    .transition()
+                    .duration(500)
+                    .style('opacity', 0)
+                    .remove();
+                
+                const linksEnter = links.enter()
+                    .append('line')
+                    .attr('class', 'link')
+                    .style('opacity', 0);
+                
+                links.merge(linksEnter)
+                    .attr('stroke', d => this.getColor(d.value))
+                    .attr('stroke-width', d => Math.pow(d.value / 100, 2) * 4 + 1)
+                    .transition()
+                    .duration(500)
+                    .style('opacity', d => 0.6 + (d.value / 100) * 0.2);
+                
+                // Update nodes
+                const nodeGroups = this.nodesGroup.selectAll('.node-group')
+                    .data(this.graphData.nodes, d => d.id);
+                
+                nodeGroups.exit()
+                    .transition()
+                    .duration(500)
+                    .style('opacity', 0)
+                    .remove();
+                
+                const nodeGroupsEnter = nodeGroups.enter()
+                    .append('g')
+                    .attr('class', 'node-group')
+                    .attr('id', d => `node-${d.id}`)
+                    .style('opacity', 0);
+                
+                // Add circles
+                nodeGroupsEnter.append('circle')
+                    .attr('class', 'node')
+                    .attr('r', 0);
+                
+                // Add labels
+                nodeGroupsEnter.append('text')
+                    .attr('class', d => d.isTarget ? 'node-label target-label' : 'node-label')
+                    .attr('dy', d => d.isTarget ? '0.35em' : '0.35em')
+                    .attr('dx', d => d.isTarget ? 0 : this.getNodeRadius(d.score, d.isTarget) + 8);
+                
+                // Add sublabels
+                nodeGroupsEnter.append('text')
+                    .attr('class', 'node-sublabel')
+                    .attr('dy', '1.2em')
+                    .attr('dx', d => this.getNodeRadius(d.score, d.isTarget) + 8);
+                
+                // Update all nodes
+                const allNodeGroups = nodeGroups.merge(nodeGroupsEnter);
+                
+                allNodeGroups.select('.node')
+                    .attr('fill', d => d.isTarget ? '#a855f7' : this.getColor(d.score))
+                    .attr('stroke', d => d.isTarget ? '#a855f7' : this.getColor(d.score))
+                    .attr('stroke-width', d => d.isNew ? 3 : 1.5)
+                    .transition()
+                    .duration(500)
+                    .attr('r', d => this.getNodeRadius(d.score, d.isTarget));
+                
+                allNodeGroups.select('.node-label')
+                    .text(d => d.label)
+                    .attr('dx', d => d.isTarget ? 0 : this.getNodeRadius(d.score, d.isTarget) + 8);
+                
+                allNodeGroups.select('.node-sublabel')
+                    .text(d => d.isTarget ? '' : `${d.score.toFixed(0)}%`)
+                    .attr('dx', d => this.getNodeRadius(d.score, d.isTarget) + 8);
+                
+                // Fade in new nodes
+                nodeGroupsEnter
+                    .transition()
+                    .duration(500)
+                    .style('opacity', 1);
+                
+                // Add interactions
+                allNodeGroups
+                    .call(d3.drag()
+                        .on('start', (event, d) => this.dragStarted(event, d))
+                        .on('drag', (event, d) => this.dragged(event, d))
+                        .on('end', (event, d) => this.dragEnded(event, d)))
+                    .on('mouseenter', (event, d) => this.handleNodeHover(event, d))
+                    .on('mouseleave', (event, d) => this.handleNodeLeave(event, d))
+                    .on('click', (event, d) => this.handleNodeClick(event, d));
+                
+                // Update simulation
+                this.simulation.nodes(this.graphData.nodes);
+                this.simulation.force('link').links(this.graphData.links);
+                this.simulation.alpha(0.6).restart();
+                
+                // Update positions on tick
+                this.simulation.on('tick', () => this.simulationTick());
+                
+                // Create trails for new nodes
+                if (this.settings.enableTrails) {
+                    this.createTrails();
+                }
+                
+                // Update heatmap
+                if (this.settings.enableHeatmap) {
+                    this.updateHeatmap();
+                }
+                
+                // Remove new highlight after animation
+                setTimeout(() => {
+                    allNodeGroups.select('.node')
+                        .attr('stroke-width', 1.5);
+                    this.graphData.nodes.forEach(n => n.isNew = false);
+                }, 3000);
+            },
+            
+            // Update halos
+            updateHalos() {
+                const halos = this.halosGroup.selectAll('.halo')
+                    .data(this.graphData.nodes.filter(d => d.score > 40), d => d.id);
+                
+                halos.exit()
+                    .transition()
+                    .duration(500)
+                    .style('opacity', 0)
+                    .remove();
+                
+                const halosEnter = halos.enter()
+                    .append('circle')
+                    .attr('class', 'halo')
+                    .style('opacity', 0);
+                
+                halos.merge(halosEnter)
+                    .attr('r', d => this.getNodeRadius(d.score, d.isTarget) * 3)
+                    .attr('fill', d => this.getHaloGradient(d.score))
+                    .transition()
+                    .duration(1000)
+                    .style('opacity', 0.6);
+            },
+            
+            // Create motion trails
+            createTrails() {
+                this.graphData.nodes.forEach(node => {
+                    if (node.isNew && node.lastX !== undefined) {
+                        const trail = this.trailsGroup.append('line')
+                            .attr('class', 'trail')
+                            .attr('x1', node.lastX)
+                            .attr('y1', node.lastY)
+                            .attr('x2', node.lastX)
+                            .attr('y2', node.lastY)
+                            .style('stroke', this.getColor(node.score))
+                            .style('stroke-width', 2)
+                            .style('stroke-opacity', 0.6)
+                            .style('stroke-dasharray', '5,5');
+                        
+                        trail.transition()
+                            .duration(1000)
+                            .ease(d3.easeCubicInOut)
+                            .attr('x2', node.x)
+                            .attr('y2', node.y)
+                            .transition()
+                            .duration(500)
+                            .style('stroke-opacity', 0)
+                            .remove();
+                    }
+                });
+            },
+            
+            // Update heatmap
+            updateHeatmap() {
+                const ctx = this.heatmapCtx;
+                const width = ctx.canvas.width;
+                const height = ctx.canvas.height;
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, width, height);
+                
+                // Create heat points for each node
+                this.graphData.nodes.forEach(node => {
+                    const x = node.x;
+                    const y = node.y;
+                    const radius = 50 + node.score;
+                    
+                    const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+                    const color = d3.color(this.getColor(node.score));
+                    
+                    gradient.addColorStop(0, color.copy({opacity: 0.4}));
+                    gradient.addColorStop(0.5, color.copy({opacity: 0.2}));
+                    gradient.addColorStop(1, color.copy({opacity: 0}));
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+                });
+            },
+            
+            // Simulation tick
+            simulationTick() {
+                // Update link positions
+                this.linksGroup.selectAll('.link')
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+                
+                // Update node positions
+                this.nodesGroup.selectAll('.node-group')
+                    .attr('transform', d => `translate(${d.x},${d.y})`);
+                
+                // Update halo positions
+                if (this.settings.enableHalos) {
+                    this.halosGroup.selectAll('.halo')
+                        .attr('cx', d => d.x)
+                        .attr('cy', d => d.y);
+                }
+            },
+            
+            // Node interactions
+            handleNodeHover(event, d) {
+                // Highlight node
+                d3.select(event.currentTarget).select('.node')
+                    .transition()
+                    .duration(200)
+                    .attr('stroke-width', 3)
+                    .attr('r', d => this.getNodeRadius(d.score, d.isTarget) * 1.2);
+                
+                // Show enhanced tooltip
+                const tooltip = document.getElementById('tooltip');
+                const path = this.findPathToTarget(d);
+                
+                tooltip.innerHTML = `
+                    <div class="tooltip-title">${d.label}</div>
+                    <div class="tooltip-score" style="color: ${this.getColor(d.score)}">
+                        ${d.score.toFixed(1)}%
+                    </div>
+                    ${path ? `<div class="tooltip-path">Path: ${path.length} steps to target</div>` : ''}
+                `;
+                
+                tooltip.style.opacity = 1;
+                tooltip.style.left = `${event.pageX + 10}px`;
+                tooltip.style.top = `${event.pageY - 10}px`;
+                
+                // Highlight path to target
+                if (!d.isTarget) {
+                    this.highlightPath(d);
+                }
+            },
+            
+            handleNodeLeave(event, d) {
+                // Reset node
+                d3.select(event.currentTarget).select('.node')
+                    .transition()
+                    .duration(200)
+                    .attr('stroke-width', d.isNew ? 3 : 1.5)
+                    .attr('r', d => this.getNodeRadius(d.score, d.isTarget));
+                
+                // Hide tooltip
+                document.getElementById('tooltip').style.opacity = 0;
+                
+                // Reset path highlighting
+                this.resetHighlighting();
+            },
+            
+            handleNodeClick(event, d) {
+                // Focus on node
+                const transform = d3.zoomIdentity
+                    .translate(this.svg.node().clientWidth / 2, this.svg.node().clientHeight / 2)
+                    .scale(2)
+                    .translate(-d.x, -d.y);
+                
+                this.svg.transition()
+                    .duration(750)
+                    .call(d3.zoom().transform, transform);
+            },
+            
+            // Find path to target
+            findPathToTarget(node) {
+                if (node.isTarget) return null;
+                
+                const visited = new Set();
+                const queue = [{node: node, path: []}];
+                
+                while (queue.length > 0) {
+                    const {node: current, path} = queue.shift();
+                    
+                    if (visited.has(current.id)) continue;
+                    visited.add(current.id);
+                    
+                    // Find links from this node
+                    const links = this.graphData.links.filter(l => 
+                        l.source.id === current.id || l.source === current.id
+                    );
+                    
+                    for (const link of links) {
+                        const target = link.target.id ? link.target : this.graphData.nodes.find(n => n.id === link.target);
+                        if (target.isTarget) {
+                            return [...path, current, target];
+                        }
+                        queue.push({node: target, path: [...path, current]});
+                    }
+                }
+                
+                return null;
+            },
+            
+            // Highlight path
+            highlightPath(node) {
+                const path = this.findPathToTarget(node);
+                if (!path) return;
+                
+                // Fade all elements
+                this.nodesGroup.selectAll('.node-group')
+                    .transition()
+                    .duration(200)
+                    .style('opacity', 0.2);
+                
+                this.linksGroup.selectAll('.link')
+                    .transition()
+                    .duration(200)
+                    .style('opacity', 0.1);
+                
+                // Highlight path nodes
+                path.forEach(n => {
+                    this.nodesGroup.select(`#node-${n.id}`)
+                        .transition()
+                        .duration(200)
+                        .style('opacity', 1);
+                });
+                
+                // Highlight path links
+                for (let i = 0; i < path.length - 1; i++) {
+                    const source = path[i].id;
+                    const target = path[i + 1].id;
+                    
+                    this.linksGroup.selectAll('.link')
+                        .filter(d => 
+                            (d.source.id === source && d.target.id === target) ||
+                            (d.source.id === target && d.target.id === source)
+                        )
+                        .transition()
+                        .duration(200)
+                        .style('opacity', 1)
+                        .attr('stroke-width', d => Math.pow(d.value / 100, 2) * 8 + 2);
+                }
+            },
+            
+            // Reset highlighting
+            resetHighlighting() {
+                this.nodesGroup.selectAll('.node-group')
+                    .transition()
+                    .duration(200)
+                    .style('opacity', 1);
+                
+                this.linksGroup.selectAll('.link')
+                    .transition()
+                    .duration(200)
+                    .style('opacity', d => 0.6 + (d.value / 100) * 0.2)
+                    .attr('stroke-width', d => Math.pow(d.value / 100, 2) * 4 + 1);
+            },
+            
+            // Drag functions
+            dragStarted(event, d) {
+                if (!event.active) this.simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+                d.lastX = d.x;
+                d.lastY = d.y;
+            },
+            
+            dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            },
+            
+            dragEnded(event, d) {
+                if (!event.active) this.simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            },
+            
+            // Performance monitoring
+            startPerformanceMonitor() {
+                const updateFPS = () => {
+                    const now = performance.now();
+                    const delta = now - this.lastTime;
+                    
+                    if (delta >= 1000) {
+                        this.fps = Math.round((this.frameCount * 1000) / delta);
+                        document.getElementById('fps').textContent = this.fps;
+                        this.frameCount = 0;
+                        this.lastTime = now;
+                    }
+                    
+                    this.frameCount++;
+                    requestAnimationFrame(updateFPS);
+                };
+                
+                requestAnimationFrame(updateFPS);
+            },
+            
+            // API Configuration
+            API_BASE_URL: 'http://localhost:5001',
+            
+            // API functions
+            async setWord() {
+                const input = document.getElementById('secret-word');
+                const word = input.value.trim().toLowerCase();
+                
+                if (!word) {
+                    this.showError('Please enter a word');
+                    return;
+                }
+                
+                this.showLoading(true);
+                
+                try {
+                    const response = await fetch(`${this.API_BASE_URL}/set_word`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ word, model: this.currentModel })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // Reset game
+                        this.guessHistory = [];
+                        document.getElementById('guess-history').innerHTML = '';
+                        document.getElementById('guess-count').textContent = '0';
+                        
+                        // Switch to game phase
+                        document.getElementById('setup-phase').style.display = 'none';
+                        document.getElementById('game-phase').style.display = 'block';
+                        document.getElementById('guess-input').focus();
+                        
+                        // Initialize graph
+                        this.updateGraph({
+                            nodes: [{
+                                id: word,
+                                label: '?',
+                                score: 100,
+                                isTarget: true
+                            }],
+                            links: []
+                        });
+                    } else {
+                        this.showError(data.error || 'Failed to set word');
+                    }
+                } catch (error) {
+                    this.showError('Network error. Please try again.');
+                } finally {
+                    this.showLoading(false);
+                }
+            },
+            
+            async makeGuess() {
+                const input = document.getElementById('guess-input');
+                const word = input.value.trim().toLowerCase();
+                
+                if (!word) return;
+                
+                this.showLoading(true);
+                
+                try {
+                    const response = await fetch(`${this.API_BASE_URL}/guess`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ word, model: this.currentModel })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        // Clear input
+                        input.value = '';
+                        
+                        // Update UI
+                        document.getElementById('guess-count').textContent = data.guess_count;
+                        
+                        // Add to history
+                        this.guessHistory.push({
+                            word: data.word,
+                            score: data.score,
+                            isNew: true,
+                            timestamp: Date.now()
+                        });
+                        this.updateHistory();
+                        
+                        // Mark new node in graph data
+                        if (data.graph_data && data.graph_data.nodes) {
+                            data.graph_data.nodes.forEach(node => {
+                                if (node.id === word) {
+                                    node.isNew = true;
+                                }
+                            });
+                        }
+                        
+                        // Update graph
+                        this.updateGraph(data.graph_data);
+                        
+                        // Check if won
+                        if (data.correct) {
+                            this.showSuccess(data.word, data.guess_count);
+                        }
+                    } else {
+                        this.showError(data.error || 'Invalid guess');
+                    }
+                } catch (error) {
+                    this.showError('Network error. Please try again.');
+                } finally {
+                    this.showLoading(false);
+                }
+            },
+            
+            findBestConnection(node, allNodes) {
+                // Mock: find node with closest score
+                return allNodes
+                    .filter(n => n.id !== node.id)
+                    .sort((a, b) => Math.abs(a.score - node.score) - Math.abs(b.score - node.score))[0];
+            },
+            
+            // UI helpers
+            showLoading(show) {
+                document.getElementById('loading').style.display = show ? 'inline-block' : 'none';
+                document.querySelectorAll('button').forEach(btn => btn.disabled = show);
+            },
+            
+            showError(message) {
+                const container = document.getElementById('error-container');
+                container.innerHTML = `<div class="error">${message}</div>`;
+                setTimeout(() => container.innerHTML = '', 5000);
+            },
+            
+            showSuccess(word, guessCount) {
+                const modal = document.createElement('div');
+                modal.className = 'success-modal';
+                modal.innerHTML = `
+                    <div class="success-content">
+                        <h2>🎉 Congratulations!</h2>
+                        <div class="success-word">${word}</div>
+                        <div class="success-stats">Found in ${guessCount} ${guessCount === 1 ? 'guess' : 'guesses'}</div>
+                        <button onclick="location.reload()">Play Again</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            },
+            
+            updateHistory() {
+                const container = document.getElementById('guess-history');
+                container.innerHTML = '';
+                
+                // Sort based on current mode
+                const sorted = [...this.guessHistory].sort((a, b) => {
+                    if (this.settings.historySort === 'score') {
+                        return b.score - a.score;
+                    } else {
+                        return b.timestamp - a.timestamp;
+                    }
+                });
+                
+                sorted.forEach(guess => {
+                    const item = document.createElement('div');
+                    item.className = 'guess-item';
+                    if (guess.isNew) {
+                        item.className += ' new';
+                        setTimeout(() => {
+                            item.classList.remove('new');
+                            guess.isNew = false;
+                        }, 500);
+                    }
+                    
+                    item.innerHTML = `
+                        <span class="guess-word">${guess.word}</span>
+                        <span class="guess-score" style="color: ${this.getColor(guess.score)}">${guess.score.toFixed(1)}%</span>
+                    `;
+                    
+                    item.onclick = () => this.focusNode(guess.word);
+                    
+                    container.appendChild(item);
+                });
+            },
+            
+            focusNode(nodeId) {
+                const node = this.graphData.nodes.find(n => n.id === nodeId);
+                if (!node) return;
+                
+                // Highlight in history
+                document.querySelectorAll('.guess-item').forEach(item => {
+                    item.classList.remove('highlighted');
+                    if (item.querySelector('.guess-word').textContent === nodeId) {
+                        item.classList.add('highlighted');
+                    }
+                });
+                
+                // Focus in graph
+                this.handleNodeClick(null, node);
+            },
+            
+            toggleHistorySort() {
+                this.settings.historySort = this.settings.historySort === 'score' ? 'time' : 'score';
+                document.getElementById('sort-mode').textContent = 
+                    this.settings.historySort === 'score' ? 'Score' : 'Time';
+                this.updateHistory();
+            },
+            
+            toggleSidebar() {
+                const sidebar = document.getElementById('sidebar');
+                sidebar.classList.toggle('collapsed');
+                const toggle = sidebar.querySelector('.sidebar-toggle');
+                toggle.textContent = sidebar.classList.contains('collapsed') ? '›' : '‹';
+                
+                // Resize graph
+                setTimeout(() => {
+                    const container = document.querySelector('.graph-container');
+                    const width = container.clientWidth;
+                    const height = container.clientHeight;
+                    
+                    this.svg.attr('width', width).attr('height', height);
+                    this.simulation.force('center', d3.forceCenter(width / 2, height / 2));
+                    this.simulation.alpha(0.3).restart();
+                }, 300);
+            },
+            
+            toggleAutoPlay() {
+                // Mock auto-play functionality
+                const button = document.getElementById('autoplay-text');
+                if (button.textContent === 'Auto Play') {
+                    button.textContent = 'Stop Auto Play';
+                    this.startAutoPlay();
+                } else {
+                    button.textContent = 'Auto Play';
+                    this.stopAutoPlay();
+                }
+            },
+            
+            startAutoPlay() {
+                const words = ['water', 'ocean', 'sea', 'wave', 'beach', 'sand', 'fish', 'whale', 'blue', 'deep'];
+                let index = 0;
+                
+                this.autoPlayInterval = setInterval(() => {
+                    if (index < words.length) {
+                        document.getElementById('guess-input').value = words[index];
+                        this.makeGuess();
+                        index++;
+                    } else {
+                        this.stopAutoPlay();
+                    }
+                }, this.settings.autoPlaySpeed);
+            },
+            
+            stopAutoPlay() {
+                if (this.autoPlayInterval) {
+                    clearInterval(this.autoPlayInterval);
+                    document.getElementById('autoplay-text').textContent = 'Auto Play';
+                }
+            },
+            
+            async getHint() {
+                this.showLoading(true);
+                
+                try {
+                    const response = await fetch(`${this.API_BASE_URL}/hint`, {
+                        credentials: 'include'
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.showError(data.hint); // Using error container for hints
+                    }
+                } catch (error) {
+                    this.showError('Failed to get hint');
+                } finally {
+                    this.showLoading(false);
+                }
+            },
+            
+            // Setup event listeners
+            setupEventListeners() {
+                // Enter key handlers
+                document.getElementById('secret-word').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.setWord();
+                });
+                
+                document.getElementById('guess-input').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.makeGuess();
+                });
+                
+                // Model selector
+                document.getElementById('model-select').addEventListener('change', async (e) => {
+                    this.currentModel = e.target.value;
+                    
+                    // If game is in progress, recalculate similarities
+                    if (this.guessHistory.length > 0) {
+                        this.showLoading(true);
+                        
+                        try {
+                            const response = await fetch(`${this.API_BASE_URL}/calculate_similarities`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify({ model: this.currentModel })
+                            });
+                            
+                            const data = await response.json();
+                            
+                            if (response.ok) {
+                                // Update graph
+                                this.updateGraph(data.graph_data);
+                                
+                                // Update history scores
+                                if (data.guess_scores) {
+                                    data.guess_scores.forEach(scoreData => {
+                                        const historyItem = this.guessHistory.find(g => g.word === scoreData.word);
+                                        if (historyItem) {
+                                            historyItem.score = scoreData.score;
+                                        }
+                                    });
+                                    this.updateHistory();
+                                }
+                            }
+                        } catch (error) {
+                            this.showError('Failed to recalculate similarities');
+                        } finally {
+                            this.showLoading(false);
+                        }
+                    }
+                });
+                
+                // Visualization mode
+                document.querySelectorAll('.mode-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.visualizationMode = e.target.dataset.mode;
+                        this.updateGraph(this.graphData);
+                    });
+                });
+                
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
+                        e.preventDefault();
+                        if (this.simulation.alpha() > 0) {
+                            this.simulation.stop();
+                        } else {
+                            this.simulation.alpha(0.3).restart();
+                        }
+                    }
+                });
+                
+                // Window resize
+                window.addEventListener('resize', () => {
+                    const container = document.querySelector('.graph-container');
+                    const width = container.clientWidth;
+                    const height = container.clientHeight;
+                    
+                    this.svg.attr('width', width).attr('height', height);
+                    this.simulation.force('center', d3.forceCenter(width / 2, height / 2));
+                    this.simulation.alpha(0.3).restart();
+                    
+                    // Resize heatmap
+                    const canvas = document.getElementById('heatmap');
+                    canvas.width = width;
+                    canvas.height = height;
+                });
+            }
+        };
+        
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            game.init();
+        });
+    </script>
+</body>
+</html>

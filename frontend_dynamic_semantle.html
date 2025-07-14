@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Semantle</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: #1a1a1a;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            color: #a855f7;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .model-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .model-selector select {
+            background: #2a2a2a;
+            color: #e0e0e0;
+            border: 1px solid #444;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background: #1a1a1a;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .controls {
+            padding: 1.5rem;
+            border-bottom: 1px solid #333;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.75rem;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #e0e0e0;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #a855f7;
+            box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            background: #a855f7;
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        button:hover:not(:disabled) {
+            background: #9333ea;
+            transform: translateY(-1px);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #4a4a4a;
+            cursor: not-allowed;
+        }
+
+        .secondary-button {
+            background: #374151;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        .secondary-button:hover:not(:disabled) {
+            background: #4b5563;
+        }
+
+        .status {
+            text-align: center;
+            padding: 0.5rem;
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        /* History Panel */
+        .history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .history h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: #a855f7;
+        }
+
+        .guess-item {
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: #2a2a2a;
+            border-radius: 0.375rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .guess-item.new {
+            animation: slideIn 0.5s ease-out;
+            border: 1px solid #a855f7;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .guess-word {
+            font-weight: 500;
+        }
+
+        .guess-score {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        /* Graph Container */
+        .graph-container {
+            flex: 1;
+            position: relative;
+            background: #0f0f0f;
+        }
+
+        #graph {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Graph Styles */
+        .node {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .node:hover {
+            filter: brightness(1.2);
+        }
+
+        .node-label {
+            font-size: 14px;
+            font-weight: 500;
+            pointer-events: none;
+            user-select: none;
+            fill: white;
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+
+        .link {
+            fill: none;
+            pointer-events: none;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: #1a1a1a;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.9rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            border: 1px solid #333;
+            z-index: 1000;
+        }
+
+        /* Legend */
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(26, 26, 26, 0.9);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #333;
+            font-size: 0.85rem;
+        }
+
+        .legend h4 {
+            color: #a855f7;
+            margin-bottom: 0.5rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        /* Success Modal */
+        .success-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .success-content {
+            background: #1a1a1a;
+            padding: 3rem;
+            border-radius: 1rem;
+            text-align: center;
+            border: 2px solid #a855f7;
+            animation: scaleIn 0.3s ease-out;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .success-content h2 {
+            color: #a855f7;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .success-word {
+            font-size: 2rem;
+            color: #10b981;
+            margin-bottom: 1rem;
+        }
+
+        .success-stats {
+            font-size: 1.2rem;
+            color: #999;
+            margin-bottom: 2rem;
+        }
+
+        /* Loading State */
+        .loading {
+            display: inline-block;
+            margin-left: 0.5rem;
+            color: #a855f7;
+        }
+
+        .loading::after {
+            content: "...";
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: ""; }
+            40% { content: "."; }
+            60% { content: ".."; }
+            80%, 100% { content: "..."; }
+        }
+
+        /* Error Message */
+        .error {
+            background: #991b1b;
+            color: #fecaca;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                max-height: 40vh;
+                border-right: none;
+                border-bottom: 1px solid #333;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Dynamic Semantle</h1>
+        <div class="model-selector">
+            <label for="model-select">Model:</label>
+            <select id="model-select">
+                <option value="sentence-bert">Sentence-BERT</option>
+                <option value="conceptnet">ConceptNet</option>
+                <option value="word2vec">Word2Vec</option>
+                <option value="glove">GloVe</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="controls">
+                <div id="setup-phase">
+                    <div class="input-group">
+                        <input type="text" id="secret-word" placeholder="Enter secret word" autofocus>
+                        <button onclick="game.setWord()">Set Word</button>
+                    </div>
+                </div>
+                
+                <div id="game-phase" style="display: none;">
+                    <div class="input-group">
+                        <input type="text" id="guess-input" placeholder="Enter your guess" autofocus>
+                        <button onclick="game.makeGuess()">Guess</button>
+                    </div>
+                    <button class="secondary-button" onclick="game.getHint()">Get Hint</button>
+                    <div class="status">
+                        Guesses: <span id="guess-count">0</span>
+                        <span id="loading" class="loading" style="display: none;"></span>
+                    </div>
+                    <div id="error-container"></div>
+                </div>
+            </div>
+            
+            <div class="history">
+                <h3>Guess History</h3>
+                <div id="guess-history"></div>
+            </div>
+        </div>
+        
+        <div class="graph-container">
+            <svg id="graph"></svg>
+            <div class="legend">
+                <h4>Similarity Score</h4>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #10b981;"></div>
+                    <span>80-100</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #84cc16;"></div>
+                    <span>60-80</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #eab308;"></div>
+                    <span>40-60</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f97316;"></div>
+                    <span>20-40</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ef4444;"></div>
+                    <span>0-20</span>
+                </div>
+            </div>
+            <div class="tooltip" id="tooltip"></div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:5000' 
+            : 'https://your-api-server.com';
+
+        // Game State
+        const game = {
+            currentModel: 'sentence-bert',
+            guessHistory: [],
+            graphData: { nodes: [], links: [] },
+            simulation: null,
+            svg: null,
+            g: null,
+            
+            // Initialize the game
+            init() {
+                this.initializeGraph();
+                this.setupEventListeners();
+            },
+            
+            // Initialize D3 graph
+            initializeGraph() {
+                const container = document.querySelector('.graph-container');
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+
+                this.svg = d3.select('#graph')
+                    .attr('width', width)
+                    .attr('height', height);
+
+                // Add zoom behavior
+                const zoom = d3.zoom()
+                    .scaleExtent([0.1, 4])
+                    .on('zoom', (event) => {
+                        this.g.attr('transform', event.transform);
+                    });
+
+                this.svg.call(zoom);
+                this.g = this.svg.append('g');
+
+                // Initialize force simulation
+                this.simulation = d3.forceSimulation()
+                    .force('link', d3.forceLink().id(d => d.id).distance(d => (100 - d.value) * 2))
+                    .force('charge', d3.forceManyBody().strength(-300))
+                    .force('center', d3.forceCenter(width / 2, height / 2))
+                    .force('collision', d3.forceCollide().radius(d => this.getNodeRadius(d.score) + 10));
+            },
+            
+            // Set up event listeners
+            setupEventListeners() {
+                // Enter key handlers
+                document.getElementById('secret-word').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.setWord();
+                });
+                
+                document.getElementById('guess-input').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.makeGuess();
+                });
+                
+                // Model selector
+                document.getElementById('model-select').addEventListener('change', (e) => {
+                    this.currentModel = e.target.value;
+                    if (this.guessHistory.length > 0) {
+                        this.recalculateSimilarities();
+                    }
+                });
+                
+                // Window resize
+                window.addEventListener('resize', () => {
+                    const container = document.querySelector('.graph-container');
+                    const width = container.clientWidth;
+                    const height = container.clientHeight;
+                    
+                    this.svg.attr('width', width).attr('height', height);
+                    this.simulation.force('center', d3.forceCenter(width / 2, height / 2));
+                    this.simulation.alpha(0.3).restart();
+                });
+            },
+            
+            // Color scale
+            getColor(score) {
+                const hue = (score / 100) * 120;
+                return `hsl(${hue}, 70%, 50%)`;
+            },
+            
+            // Node radius
+            getNodeRadius(score, isTarget = false) {
+                if (isTarget) return 25;
+                return 8 + (score / 100) * 12;
+            },
+            
+            // Show loading state
+            showLoading(show) {
+                document.getElementById('loading').style.display = show ? 'inline-block' : 'none';
+                document.querySelectorAll('button').forEach(btn => btn.disabled = show);
+            },
+            
+            // Show error
+            showError(message) {
+                const container = document.getElementById('error-container');
+                container.innerHTML = `<div class="error">${message}</div>`;
+                setTimeout(() => container.innerHTML = '', 5000);
+            },
+            
+            // Set secret word
+            async setWord() {
+                const input = document.getElementById('secret-word');
+                const word = input.value.trim().toLowerCase();
+                
+                if (!word) {
+                    this.showError('Please enter a word');
+                    return;
+                }
+                
+                this.showLoading(true);
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/set_word`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ word, model: this.currentModel })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        // Reset game state
+                        this.guessHistory = [];
+                        document.getElementById('guess-history').innerHTML = '';
+                        document.getElementById('guess-count').textContent = '0';
+                        
+                        // Switch to game phase
+                        document.getElementById('setup-phase').style.display = 'none';
+                        document.getElementById('game-phase').style.display = 'block';
+                        document.getElementById('guess-input').focus();
+                        
+                        // Initialize graph with secret node
+                        this.updateGraph({
+                            nodes: [{
+                                id: word,
+                                label: '?',
+                                score: 100,
+                                isTarget: true
+                            }],
+                            links: []
+                        });
+                    } else {
+                        this.showError(data.error || 'Failed to set word');
+                    }
+                } catch (error) {
+                    this.showError('Network error. Please try again.');
+                } finally {
+                    this.showLoading(false);
+                }
+            },
+            
+            // Make a guess
+            async makeGuess() {
+                const input = document.getElementById('guess-input');
+                const word = input.value.trim().toLowerCase();
+                
+                if (!word) return;
+                
+                this.showLoading(true);
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/guess`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ word, model: this.currentModel })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        // Clear input
+                        input.value = '';
+                        
+                        // Update UI
+                        document.getElementById('guess-count').textContent = data.guess_count;
+                        
+                        // Add to history
+                        this.guessHistory.push({
+                            word: data.word,
+                            score: data.score,
+                            isNew: true
+                        });
+                        this.updateHistory();
+                        
+                        // Update graph
+                        if (data.graph_data) {
+                            // Mark new node
+                            data.graph_data.nodes.forEach(node => {
+                                if (node.id === word) {
+                                    node.isNew = true;
+                                }
+                            });
+                            this.updateGraph(data.graph_data);
+                        }
+                        
+                        // Check if won
+                        if (data.correct) {
+                            this.showSuccess(data.word, data.guess_count);
+                        }
+                    } else {
+                        this.showError(data.error || 'Invalid guess');
+                    }
+                } catch (error) {
+                    this.showError('Network error. Please try again.');
+                } finally {
+                    this.showLoading(false);
+                }
+            },
+            
+            // Get hint
+            async getHint() {
+                this.showLoading(true);
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/hint`);
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.showError(data.hint); // Using error container for hints too
+                    }
+                } catch (error) {
+                    this.showError('Failed to get hint');
+                } finally {
+                    this.showLoading(false);
+                }
+            },
+            
+            // Recalculate similarities when model changes
+            async recalculateSimilarities() {
+                this.showLoading(true);
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/calculate_similarities`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ model: this.currentModel })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        // Update graph
+                        this.updateGraph(data.graph_data);
+                        
+                        // Update history scores
+                        if (data.guess_scores) {
+                            data.guess_scores.forEach(scoreData => {
+                                const historyItem = this.guessHistory.find(g => g.word === scoreData.word);
+                                if (historyItem) {
+                                    historyItem.score = scoreData.score;
+                                }
+                            });
+                            this.updateHistory();
+                        }
+                    }
+                } catch (error) {
+                    this.showError('Failed to recalculate similarities');
+                } finally {
+                    this.showLoading(false);
+                }
+            },
+            
+            // Update guess history display
+            updateHistory() {
+                const container = document.getElementById('guess-history');
+                container.innerHTML = '';
+                
+                // Sort by score
+                const sorted = [...this.guessHistory].sort((a, b) => b.score - a.score);
+                
+                sorted.forEach(guess => {
+                    const item = document.createElement('div');
+                    item.className = 'guess-item';
+                    if (guess.isNew) {
+                        item.className += ' new';
+                        setTimeout(() => {
+                            item.classList.remove('new');
+                            guess.isNew = false;
+                        }, 500);
+                    }
+                    
+                    item.innerHTML = `
+                        <span class="guess-word">${guess.word}</span>
+                        <span class="guess-score" style="color: ${this.getColor(guess.score)}">${guess.score.toFixed(1)}%</span>
+                    `;
+                    
+                    container.appendChild(item);
+                });
+            },
+            
+            // Update D3 graph
+            updateGraph(data) {
+                this.graphData = data;
+                
+                // Clear existing elements
+                this.g.selectAll('.link').remove();
+                this.g.selectAll('.node-group').remove();
+                
+                // Create links
+                const link = this.g.selectAll('.link')
+                    .data(this.graphData.links)
+                    .enter().append('line')
+                    .attr('class', 'link')
+                    .attr('stroke', d => this.getColor(d.value))
+                    .attr('stroke-width', d => Math.pow(d.value / 100, 2) * 4 + 1)
+                    .attr('stroke-opacity', d => 0.6 + (d.value / 100) * 0.2);
+                
+                // Create node groups
+                const nodeGroup = this.g.selectAll('.node-group')
+                    .data(this.graphData.nodes)
+                    .enter().append('g')
+                    .attr('class', 'node-group');
+                
+                // Add circles
+                const node = nodeGroup.append('circle')
+                    .attr('class', 'node')
+                    .attr('r', d => this.getNodeRadius(d.score, d.isTarget))
+                    .attr('fill', d => d.isTarget ? '#a855f7' : this.getColor(d.score))
+                    .attr('stroke', d => d.isTarget ? '#a855f7' : this.getColor(d.score))
+                    .attr('stroke-width', d => d.isNew ? 3 : 1.5);
+                
+                // Add labels
+                nodeGroup.append('text')
+                    .attr('class', 'node-label')
+                    .text(d => d.label);
+                
+                // Add drag behavior
+                nodeGroup.call(d3.drag()
+                    .on('start', (event, d) => this.dragStarted(event, d))
+                    .on('drag', (event, d) => this.dragged(event, d))
+                    .on('end', (event, d) => this.dragEnded(event, d)));
+                
+                // Add hover effects
+                nodeGroup
+                    .on('mouseenter', (event, d) => {
+                        d3.select(event.currentTarget).select('circle')
+                            .attr('stroke-width', 3);
+                        
+                        const tooltip = document.getElementById('tooltip');
+                        tooltip.style.opacity = 1;
+                        tooltip.style.left = `${event.pageX + 10}px`;
+                        tooltip.style.top = `${event.pageY - 10}px`;
+                        tooltip.innerHTML = `
+                            <strong>${d.label}</strong><br>
+                            Similarity: ${d.score.toFixed(1)}%
+                        `;
+                    })
+                    .on('mouseleave', (event, d) => {
+                        d3.select(event.currentTarget).select('circle')
+                            .attr('stroke-width', d.isNew ? 3 : 1.5);
+                        
+                        document.getElementById('tooltip').style.opacity = 0;
+                    });
+                
+                // Update simulation
+                this.simulation.nodes(this.graphData.nodes);
+                this.simulation.force('link').links(this.graphData.links);
+                this.simulation.alpha(0.6).restart();
+                
+                // Update positions on tick
+                this.simulation.on('tick', () => {
+                    link
+                        .attr('x1', d => d.source.x)
+                        .attr('y1', d => d.source.y)
+                        .attr('x2', d => d.target.x)
+                        .attr('y2', d => d.target.y);
+                    
+                    nodeGroup
+                        .attr('transform', d => `translate(${d.x},${d.y})`);
+                });
+                
+                // Remove new highlight after animation
+                setTimeout(() => {
+                    node.attr('stroke-width', 1.5);
+                    this.graphData.nodes.forEach(n => n.isNew = false);
+                }, 3000);
+            },
+            
+            // Drag functions
+            dragStarted(event, d) {
+                if (!event.active) this.simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            },
+            
+            dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            },
+            
+            dragEnded(event, d) {
+                if (!event.active) this.simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            },
+            
+            // Show success modal
+            showSuccess(word, guessCount) {
+                const modal = document.createElement('div');
+                modal.className = 'success-modal';
+                modal.innerHTML = `
+                    <div class="success-content">
+                        <h2>🎉 Congratulations!</h2>
+                        <div class="success-word">${word}</div>
+                        <div class="success-stats">Found in ${guessCount} ${guessCount === 1 ? 'guess' : 'guesses'}</div>
+                        <button onclick="location.reload()">Play Again</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+        };
+        
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            game.init();
+        });
+    </script>
+</body>
+</html>

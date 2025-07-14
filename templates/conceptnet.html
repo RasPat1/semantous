@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semantle - ConceptNet Edition</title>
+    <link rel="stylesheet" href="/static/conceptnet_style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Setup Phase -->
+        <div id="setup-phase" class="card">
+            <h1>🎯 Semantle</h1>
+            <p class="subtitle">ConceptNet Edition - Powered by real-world knowledge!</p>
+            
+            <div class="setup-content">
+                <p>Choose a secret word for someone to guess!</p>
+                <input type="text" id="secret-word" placeholder="Enter secret word...">
+                <button onclick="setWord()">Start Game</button>
+            </div>
+            
+            <div class="info-box">
+                <h3>How to Play:</h3>
+                <ul>
+                    <li>Set a secret word for others to guess</li>
+                    <li>Guessers try to find the word based on semantic similarity</li>
+                    <li>Uses ConceptNet's knowledge graph for word relationships</li>
+                    <li>Higher scores mean closer semantic relationship</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Game Phase -->
+        <div id="game-phase" class="card hidden">
+            <h1>🎯 Semantle - ConceptNet Edition</h1>
+            
+            <div class="stats">
+                <p>Guesses: <span id="guess-count">0</span></p>
+                <p>Best Score: <span id="best-score">--</span></p>
+                <p>Time: <span id="timer">00:00</span></p>
+            </div>
+            
+            <div class="guess-input-container">
+                <input type="text" id="guess-input" placeholder="Enter your guess...">
+                <button onclick="makeGuess()">Guess</button>
+            </div>
+            
+            <div id="current-result" class="result-display hidden">
+                <div class="score-circle">
+                    <span id="score-value">--</span>
+                </div>
+                <div class="feedback-text">
+                    <p id="feedback-message"></p>
+                    <p class="guess-word">You guessed: <strong id="guess-word"></strong></p>
+                </div>
+            </div>
+            
+            <button class="hint-button" onclick="getHint()">💡 Get Hint</button>
+            <p id="hint-text" class="hint-text hidden"></p>
+            
+            <div class="history">
+                <h3>Guess History</h3>
+                <div id="history-list"></div>
+            </div>
+            
+            <div class="api-note">
+                <p>⚡ Powered by ConceptNet's knowledge graph</p>
+                <p>Note: API calls may be slower than local models</p>
+            </div>
+        </div>
+        
+        <!-- Victory Phase -->
+        <div id="victory-phase" class="card victory-card hidden">
+            <h2>🎉 Victory!</h2>
+            <p>You found the word!</p>
+            <p>The word was: <span id="final-word"></span></p>
+            <p>Total guesses: <span id="final-guesses"></span></p>
+            <p>Time taken: <span id="final-time"></span></p>
+            <button onclick="resetGame()">Play Again</button>
+        </div>
+    </div>
+    
+    <script src="/static/conceptnet_script.js"></script>
+</body>
+</html>
